@@ -1,0 +1,55 @@
+version: '3'
+services:
+
+  rabbit:
+    image: rabbitmq:3.8.5-management
+    container_name: rabbit
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    expose:
+      - "5672"
+      - "15672"
+    restart: always
+
+  upc-lookup-gateway-roda:
+    image: upc-lookup-gateway-roda
+    build: 
+      context:  ../upc-lookup-gateway-roda
+      dockerfile: Dockerfile-dev
+    container_name: upc-lookup-gateway-roda
+    volumes:
+      - /tmp/upc-lookup-gateway-roda/npm-cache:/root/.npm:z
+      - ../upc-lookup-gateway-roda/src:/usr/src/app/src:z
+    ports:
+      - "6300:6300"
+    environment:
+      - PORT=6300
+      - RACK_ENV=development
+      - RABBIT=amqp://guest:guest@rabbit:5672
+    restart: "no"
+    depends_on:
+      - rabbit
+
+  barcode-database:
+    image: upc-scrapers-roda
+    build: 
+      context: ../upc-scrapers-roda
+      dockerfile: Dockerfile-dev
+    container_name: barcode-database
+    volumes:
+      - /tmp/upc-scraper-roda/npm-cache:/root/.npm:z
+      - ../upc-scrapers-roda/src:/usr/src/app/src:z
+    ports:
+      - "6301:6301"
+    environment:
+      - UPC_LOOKUP_GATEWAY_PORT=6300
+      - HEARTBEAT_FREQUENCY=5
+      - RACK_ENV=development
+      - SCRAPER=BarcodeDatabase
+      - RABBIT=amqp://guest:guest@rabbit:5672
+
+    restart: "no"
+    depends_on:
+      - upc-lookup-gateway-roda
+  

@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+bundle exec rackup -p 6300 -o 0.0.0.0 
+

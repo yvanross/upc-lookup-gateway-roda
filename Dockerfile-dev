@@ -1,0 +1,21 @@
+FROM ruby:3.0.1-alpine3.13
+
+RUN mkdir /app
+WORKDIR   /app
+
+COPY ./Gemfile*  /app
+
+ENV BUNDLE_PATH /tmp/bundle
+ENV RACK_ENV production
+ENV DOCKER   1
+
+RUN apk update && apk add bash && apk add build-base
+RUN bundle install  --without development test
+
+COPY . /app
+
+EXPOSE 6300
+
+
+CMD ./wait-for-it.sh localhost:5672 -- echo "rabbit is up" && \
+    bundle exec rackup -p 6300 -o 0.0.0.0
